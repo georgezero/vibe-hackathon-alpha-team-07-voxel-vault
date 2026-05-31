@@ -1,0 +1,60 @@
+{
+  "schema": "vibe-hackathon-submission-v1",
+  "team": {
+    "name": "Voxel Vault Co",
+    "contact_email": "team@voxelvault.app",
+    "members": [
+      {
+        "name": "Cameron Thomas",
+        "role": "3D + Graphics"
+      },
+      {
+        "name": "Drew Jackson",
+        "role": "AI Integration"
+      }
+    ],
+    "github_org": "georgezero"
+  },
+  "project": {
+    "name": "Voxel Vault Co \u2014 Voxel Vault",
+    "summary": "Place and remove voxels to reconstruct 3D medical scans from memory. Inspired by DICOM 3D reconstruction. Score is based on volumetric accuracy vs. reference structure.",
+    "demo_url": "https://georgezero.github.io/vibe-hackathon-alpha-team-07-voxel-vault",
+    "github_url": "https://github.com/georgezero/vibe-hackathon-alpha-team-07-voxel-vault",
+    "screenshot_url": "https://picsum.photos/seed/voxel-vault/800/500",
+    "target_users": [
+      "radiology students",
+      "3D reconstruction enthusiasts",
+      "puzzle gamers"
+    ],
+    "tags": [
+      "game",
+      "3D",
+      "voxels",
+      "reconstruction",
+      "radiology"
+    ]
+  },
+  "repo": {
+    "license": "MIT",
+    "agents_md_url": "https://github.com/georgezero/vibe-hackathon-alpha-team-07-voxel-vault/blob/main/AGENTS.md",
+    "readme_url": "https://github.com/georgezero/vibe-hackathon-alpha-team-07-voxel-vault/blob/main/README.md",
+    "env_example": "https://github.com/georgezero/vibe-hackathon-alpha-team-07-voxel-vault/blob/main/.env.example",
+    "install": "npm install",
+    "run": "npm run dev",
+    "test": "open index.html in browser and play through one game cycle",
+    "sample_data": "See sample-data/game-states.json for example state snapshots. No real patient data."
+  },
+  "agentic_dev": {
+    "harnesses": [
+      "Claude Code"
+    ],
+    "models": [
+      "claude-opus-4-5"
+    ],
+    "budget_tier": "api_10_to_50",
+    "estimated_human_hours": 20,
+    "estimated_agent_hours": 45,
+    "prompt_notes_url": "https://github.com/georgezero/vibe-hackathon-alpha-team-07-voxel-vault/blob/main/docs/prompts.md",
+    "known_limitations": "Isometric projection only. Full 3D rotation not yet implemented."
+  }
+}

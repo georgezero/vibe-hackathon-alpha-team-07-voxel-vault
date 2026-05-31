@@ -1,0 +1,22 @@
+{
+  "fresh_start": {
+    "phase": "start",
+    "score": 0,
+    "frame": 0
+  },
+  "mid_game": {
+    "phase": "playing",
+    "score": 450,
+    "frame": 1800
+  },
+  "near_death": {
+    "phase": "playing",
+    "score": 820,
+    "frame": 3200
+  },
+  "high_score_run": {
+    "phase": "playing",
+    "score": 1240,
+    "frame": 4100
+  }
+}
