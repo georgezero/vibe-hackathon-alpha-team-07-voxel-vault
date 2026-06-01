@@ -13,68 +13,148 @@
 </head>
 <body>
   <canvas id="c" width="800" height="500"></canvas>
-  <div class="info">Vibe Hackathon 2025 · Team 07 · Voxel Vault Co</div>
-  <script type="module" src="./src/main.js"></script>
+  <div class="info">Vibe Hackathon 2026 · Team 07 · Voxel Vault Co</div>
   <script>
+// Voxel Vault — catch the target anatomy voxel, dodge all others
+const C={W:800,H:500};
+const ANATOMY=['LIVER','KIDNEY','LUNG','HEART','BONE','SPLEEN','PANCREAS','BLADDER'];
+const COLORS={LIVER:'#f4a26d',KIDNEY:'#c77dff',LUNG:'#80b4c8',HEART:'#ff6b6b',BONE:'#e8e8c8',SPLEEN:'#8bc34a',PANCREAS:'#ffd54f',BLADDER:'#4dd0e1'};
 
-// Voxel Vault — isometric grid, click to place/remove voxels to match target
-const C={W:800,H:500,GRID:8,ISO_W:50,ISO_H:28};
-let grid,target,score,hi,moves,state,frame;
-function init(){grid=Array.from({length:C.GRID},()=>Array.from({length:C.GRID},()=>Array(4).fill(0)));target=Array.from({length:C.GRID},()=>Array.from({length:C.GRID},()=>Math.random()<0.4?1:0));score=0;hi=+(localStorage.getItem('vv-hi')||0);moves=30;state='playing';frame=0;}
-function toIso(gx,gy){return{x:C.W/2+(gx-gy)*C.ISO_W/2,y:60+(gx+gy)*C.ISO_H/2};}
-const canvas=document.getElementById('c');
-canvas.addEventListener('click',e=>{
-  if(state!=='playing')return;
-  const r=canvas.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
-  let hit=false;
-  for(let gy=C.GRID-1;gy>=0&&!hit;gy--)for(let gx=0;gx<C.GRID&&!hit;gx++){
-    const {x,y}=toIso(gx,gy);
-    if(mx>x-C.ISO_W/2&&mx<x+C.ISO_W/2&&my>y&&my<y+C.ISO_H){
-      const h=grid[gx][gy].filter(Boolean).length;
-      if(h<3)grid[gx][gy][h]=1;
-      else grid[gx][gy]=[0,0,0,0];
-      moves--;hit=true;
-      // Check score
-      let match=0;
-      for(let i=0;i<C.GRID;i++)for(let j=0;j<C.GRID;j++){const placed=grid[i][j].filter(Boolean).length>0;if(placed===!!target[i][j])match++;}
-      score=Math.round(match/(C.GRID*C.GRID)*100);
-      if(score>=80||moves<=0){hi=Math.max(hi,score);localStorage.setItem('vv-hi',hi);state='done';}
-    }
-  }
-});
-canvas.addEventListener('dblclick',()=>{if(state==='done')init();});
-function draw(ctx){
-  ctx.fillStyle='#0a0f1e';ctx.fillRect(0,0,C.W,C.H);
-  ctx.fillStyle='#aaa';ctx.font='14px monospace';ctx.textAlign='center';
-  ctx.fillText(`VOXEL VAULT — Match ${score}%  Moves left: ${moves}  Best: ${hi}%  (dbl-click reset)`,C.W/2,22);
-  // Draw isometric grid
-  for(let gy=0;gy<C.GRID;gy++)for(let gx=0;gx<C.GRID;gx++){
-    const {x,y}=toIso(gx,gy);
-    const h=grid[gx][gy].filter(Boolean).length;
-    const tgt=target[gx][gy];
-    // Base tile
-    ctx.fillStyle=tgt?'rgba(6,182,212,0.15)':'rgba(50,50,60,0.4)';
-    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+C.ISO_W/2,y+C.ISO_H/2);ctx.lineTo(x,y+C.ISO_H);ctx.lineTo(x-C.ISO_W/2,y+C.ISO_H/2);ctx.closePath();ctx.fill();
-    // Voxels
-    for(let hh=0;hh<h;hh++){
-      const vy=y-hh*16;const c=`rgba(6,182,212,${0.5+hh*0.2})`;
-      ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(x,vy);ctx.lineTo(x+C.ISO_W/2,vy+C.ISO_H/2);ctx.lineTo(x,vy+C.ISO_H);ctx.lineTo(x-C.ISO_W/2,vy+C.ISO_H/2);ctx.closePath();ctx.fill();
-      ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=1;ctx.stroke();
-      // Right face
-      ctx.fillStyle='rgba(0,100,120,0.6)';ctx.beginPath();ctx.moveTo(x,vy+C.ISO_H);ctx.lineTo(x+C.ISO_W/2,vy+C.ISO_H/2);ctx.lineTo(x+C.ISO_W/2,vy+C.ISO_H/2+16);ctx.lineTo(x,vy+C.ISO_H+16);ctx.closePath();ctx.fill();
-    }
-  }
-  if(state==='done'){ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(0,0,C.W,C.H);ctx.fillStyle=score>=80?'#06b6d4':'#06b6d4';ctx.font='bold 40px monospace';ctx.textAlign='center';ctx.fillText(score>=80?'SCAN MATCHED!':'RECONSTRUCTION COMPLETE',C.W/2,220);ctx.fillStyle='white';ctx.font='22px monospace';ctx.fillText(`Accuracy: ${score}%  Best: ${hi}%`,C.W/2,280);ctx.fillStyle='#aaa';ctx.font='18px monospace';ctx.fillText('Double-click to try again',C.W/2,350);}
+let g;
+function init(){
+  g={phase:'start',score:0,hi:+(localStorage.getItem('vv-hi')||0),lives:3,
+    platform:{x:360,w:80},frame:0,voxels:[],
+    target:ANATOMY[Math.floor(Math.random()*ANATOMY.length)],
+    catchCount:0,combo:0,particles:[]};
 }
 init();
-  const canvas = document.getElementById('c');
-  const ctx = canvas.getContext('2d');
-  function loop() {
-    if(typeof update === 'function') update();
-    if(typeof draw === 'function') draw(ctx);
-    requestAnimationFrame(loop);
+const keys={};
+window.addEventListener('keydown',e=>{
+  keys[e.key]=true;
+  if(e.key===' '){if(g.phase==='start'||g.phase==='gameover'){init();g.phase='playing';}}
+  e.preventDefault();
+});
+window.addEventListener('keyup',e=>{keys[e.key]=false;});
+
+function spawn(){
+  const isTarget=Math.random()<0.42;
+  const type=isTarget?g.target:ANATOMY.filter(a=>a!==g.target)[Math.floor(Math.random()*(ANATOMY.length-1))];
+  g.voxels.push({
+    x:20+Math.random()*(C.W-120),y:-44,w:74,h:30,type,
+    speed:1.6+Math.floor(g.score/300)*0.12+Math.random()*0.5,
+    alive:true
+  });
+}
+
+function update(){
+  if(g.phase!=='playing')return;
+  g.frame++;
+  if(keys['ArrowLeft'])g.platform.x=Math.max(0,g.platform.x-7);
+  if(keys['ArrowRight'])g.platform.x=Math.min(C.W-g.platform.w,g.platform.x+7);
+  // Particles
+  g.particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.14;p.life--;});
+  g.particles=g.particles.filter(p=>p.life>0);
+  // Spawn
+  const intv=Math.max(42,95-Math.floor(g.score/200)*5);
+  if(g.frame%intv===0)spawn();
+  // Voxels
+  const py=C.H-58;
+  g.voxels.forEach(v=>{
+    if(!v.alive)return;
+    v.y+=v.speed;
+    // Catch
+    if(v.y+v.h>=py&&v.y<py+18&&v.x+v.w>g.platform.x&&v.x<g.platform.x+g.platform.w){
+      v.alive=false;
+      if(v.type===g.target){
+        g.combo++;
+        const pts=10*Math.min(g.combo,5);
+        g.score+=pts;g.catchCount++;
+        for(let i=0;i<8;i++)g.particles.push({x:v.x+v.w/2,y:py,vx:(Math.random()-0.5)*5,vy:-2.5-Math.random()*3,life:22,color:COLORS[v.type]});
+        if(g.catchCount>0&&g.catchCount%5===0){
+          const others=ANATOMY.filter(a=>a!==g.target);
+          g.target=others[Math.floor(Math.random()*others.length)];
+        }
+      } else {
+        g.lives--;g.combo=0;
+        for(let i=0;i<5;i++)g.particles.push({x:v.x+v.w/2,y:py,vx:(Math.random()-0.5)*4,vy:-1.5-Math.random()*2.5,life:18,color:'#ff4444'});
+        if(g.lives<=0){if(g.score>g.hi){g.hi=g.score;localStorage.setItem('vv-hi',g.hi);}g.phase='gameover';}
+      }
+      if(g.score>g.hi){g.hi=g.score;localStorage.setItem('vv-hi',g.hi);}
+    }
+    // Missed target
+    if(v.y>C.H+10){
+      if(v.type===g.target){g.lives--;g.combo=0;if(g.lives<=0){if(g.score>g.hi){g.hi=g.score;localStorage.setItem('vv-hi',g.hi);}g.phase='gameover';}}
+      v.alive=false;
+    }
+  });
+  g.voxels=g.voxels.filter(v=>v.alive);
+}
+
+function drawVoxel(ctx,x,y,w,h,label,color,isTarget){
+  const d=5;
+  // Front face
+  ctx.fillStyle=color;ctx.fillRect(x,y,w,h);
+  // Top highlight
+  ctx.fillStyle='rgba(255,255,255,0.18)';ctx.fillRect(x,y,w,d);
+  // Bottom shadow
+  ctx.fillStyle='rgba(0,0,0,0.22)';ctx.fillRect(x,y+h-d,w,d);
+  // Right face
+  ctx.fillStyle='rgba(255,255,255,0.09)';
+  ctx.beginPath();ctx.moveTo(x+w,y);ctx.lineTo(x+w+d,y-d);ctx.lineTo(x+w+d,y+h-d);ctx.lineTo(x+w,y+h);ctx.closePath();ctx.fill();
+  // Top face
+  ctx.fillStyle='rgba(255,255,255,0.14)';
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+d,y-d);ctx.lineTo(x+w+d,y-d);ctx.lineTo(x+w,y);ctx.closePath();ctx.fill();
+  if(isTarget){ctx.strokeStyle='rgba(255,255,255,0.8)';ctx.lineWidth=2;ctx.strokeRect(x+1,y+1,w-2,h-2);}
+  ctx.fillStyle='rgba(0,0,0,0.65)';ctx.font='bold 9px monospace';ctx.textAlign='center';ctx.fillText(label,x+w/2,y+h/2+3.5);
+}
+
+function draw(ctx){
+  ctx.fillStyle='#0a0f1e';ctx.fillRect(0,0,C.W,C.H);
+  if(g.phase==='start'){
+    ctx.fillStyle='#a78bfa';ctx.font='bold 46px monospace';ctx.textAlign='center';ctx.fillText('VOXEL VAULT',C.W/2,155);
+    ctx.fillStyle='#94a3b8';ctx.font='15px monospace';
+    ctx.fillText('← →  Move scanner platform',C.W/2,216);
+    ctx.fillText('Catch the TARGET anatomy voxel · dodge all others',C.W/2,242);
+    ctx.fillText('Target changes every 5 catches',C.W/2,268);
+    ctx.fillStyle='#a78bfa';ctx.font='22px monospace';ctx.fillText('▶  SPACE TO START',C.W/2,348);
+    ctx.fillStyle='#334';ctx.font='13px monospace';ctx.fillText('High Score: '+g.hi,C.W/2,408);
+    return;
   }
-  loop();
+  // Target header bar
+  ctx.fillStyle='rgba(255,255,255,0.05)';ctx.fillRect(0,0,C.W,44);
+  ctx.fillStyle='#94a3b8';ctx.font='12px monospace';ctx.textAlign='left';ctx.fillText('SCAN TARGET:',10,26);
+  ctx.fillStyle=COLORS[g.target];ctx.font='bold 16px monospace';ctx.fillText(g.target,118,26);
+  // Preview voxel in header
+  drawVoxel(ctx,240,7,62,26,g.target,COLORS[g.target],false);
+  // HUD right
+  ctx.fillStyle='white';ctx.font='bold 14px monospace';ctx.textAlign='right';ctx.fillText('SCORE: '+g.score,C.W-8,18);
+  ctx.fillStyle='#556';ctx.font='11px monospace';ctx.fillText('BEST: '+g.hi,C.W-8,36);
+  // Combo
+  if(g.combo>1){ctx.fillStyle='#ffd700';ctx.font='bold 13px monospace';ctx.textAlign='left';ctx.fillText('×'+g.combo+' COMBO',10,C.H-58);}
+  // Particles
+  g.particles.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life/22);ctx.fillStyle=p.color;ctx.fillRect(p.x-3,p.y-3,6,6);});
+  ctx.globalAlpha=1;
+  // Voxels
+  g.voxels.forEach(v=>{if(!v.alive)return;drawVoxel(ctx,v.x,v.y,v.w,v.h,v.type,COLORS[v.type],v.type===g.target);});
+  // Platform
+  const py=C.H-58;
+  ctx.fillStyle='#7c3aed';ctx.fillRect(g.platform.x,py,g.platform.w,12);
+  ctx.fillStyle='rgba(167,139,250,0.28)';ctx.fillRect(g.platform.x+3,py+12,g.platform.w-6,4);
+  // Lives
+  ctx.fillStyle='#556';ctx.font='10px monospace';ctx.textAlign='right';ctx.fillText('LIVES',C.W-10,C.H-56);
+  for(let i=0;i<3;i++){ctx.fillStyle=i<g.lives?'#a78bfa':'#1e1830';ctx.fillRect(C.W-10-3*20+i*20,C.H-50,14,10);}
+  // Game over
+  if(g.phase==='gameover'){
+    ctx.fillStyle='rgba(0,0,0,0.72)';ctx.fillRect(0,0,C.W,C.H);
+    ctx.fillStyle='#ff4444';ctx.font='bold 40px monospace';ctx.textAlign='center';ctx.fillText('VAULT BREACH',C.W/2,185);
+    ctx.fillStyle='#aaa';ctx.font='18px monospace';ctx.fillText('Score: '+g.score,C.W/2,248);
+    if(g.score>0&&g.score>=g.hi){ctx.fillStyle='#ffd700';ctx.font='15px monospace';ctx.fillText('NEW HIGH SCORE!',C.W/2,282);}
+    ctx.fillStyle='#a78bfa';ctx.font='18px monospace';ctx.fillText('SPACE to retry',C.W/2,358);
+  }
+}
+
+const canvas=document.getElementById('c');const ctx=canvas.getContext('2d');
+(function loop(){update();draw(ctx);requestAnimationFrame(loop);})();
   </script>
 </body>
 </html>
